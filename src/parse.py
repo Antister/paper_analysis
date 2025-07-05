@@ -1,4 +1,5 @@
 import logging
+import time
 import xml.sax
 import xml.sax.handler
 from typing import Callable
@@ -70,7 +71,7 @@ class DataParser:
                         self.__paper_author,
                         self.__paper_url,
                     )
-                    if self.__predict(res):
+                    if self.__predict is None or self.__predict(res):
                         self.__result.append(res)
 
                     self.__init_paper_t()
@@ -78,22 +79,27 @@ class DataParser:
         def getResult(self):
             return self.__result
 
-    def __init__(self, filter: predict_t) -> None:
-        self.__predicate = filter
+    def __init__(self, dblp_file_path: str) -> None:
+        self.__dblp_file = dblp_file_path
 
         self.__logger = logging.getLogger("[DataParser]")
 
-    def parse(self, xml_file: str) -> list[paper_t]:
-        self.__logger.info(f"Parsing start, DBLP file: {xml_file}")
+    def parse(self, filter: predict_t | None = None) -> list[paper_t]:
+        self.__logger.info(f"Parsing start, DBLP file: {self.__dblp_file}")
+        time_start = time.perf_counter_ns()
 
         paser = xml.sax.make_parser()
         paser.setFeature(xml.sax.handler.feature_namespaces, False)
 
-        dblp_handler = DataParser.DBLP_XML_SAX_Handler(self.__predicate)
+        dblp_handler = DataParser.DBLP_XML_SAX_Handler(filter)
         paser.setContentHandler(dblp_handler)
 
-        paser.parse(xml_file)
+        paser.parse(self.__dblp_file)
         result = dblp_handler.getResult()
 
-        self.__logger.info(f"Parsing complete, {len(result)} entries total")
+        time_end = time.perf_counter_ns()
+        self.__logger.info(
+            f"Parsing complete, {len(result)} entries total with {(time_end-time_start)/(10**9)} seconds"
+        )
+
         return result
