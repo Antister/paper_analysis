@@ -1,0 +1,34 @@
+# Python
+## directories
+__pycache__/
+dist/
+wheels/
+venv/
+.venv/
+
+## files
+*.py[ocdz]
+*.egg-info
+uv.lock
+
+# C/C++
+## files
+*.d
+*.o
+*.obj
+*.[gp]ch
+*.a
+*.lib
+*.la
+*.so
+*.dll
+*.dylib
+*.out
+*.exe
+*.app
+
+# Project
+build/
+out/
+.cache/
+.vscode/
