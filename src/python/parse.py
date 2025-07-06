@@ -1,8 +1,8 @@
-import logging
 import time
+import typing
+import logging
 import xml.sax
 import xml.sax.handler
-from typing import Callable
 
 
 class DataParser:
@@ -10,7 +10,7 @@ class DataParser:
     ## tuple<conference, year, title, authors, url>
     paper_t = tuple[str, int, str, list[str], str]
     ## invokable<paper_t> -> bool
-    predict_t = Callable[[paper_t], bool]
+    predict_t = typing.Callable[[paper_t], bool]
 
     class DBLP_XML_SAX_Handler(xml.sax.ContentHandler):
         def __init__(self, predict_callback) -> None:
