@@ -5,18 +5,19 @@ import hashlib
 import urllib.request
 
 
-class DataFetcher:
+class XMLFetcher:
     FILES = {
         "dblp.xml.gz": "https://dblp.org/xml/dblp.xml.gz",
         "dblp.xml.gz.md5": "https://dblp.org/xml/dblp.xml.gz.md5",
+        "dblp.dtd": "https://dblp.org/xml/dblp.dtd",
     }
 
     def __init__(self, cache_dir: str) -> None:
         self.__cache_dir = cache_dir
 
-        self.__logger = logging.getLogger("[DataFetcher]")
+        self.__logger = logging.getLogger("[XMLFetcher]")
 
-    def fetch(self) -> None:
+    def fetch(self) -> list[str]:
         files = list(self.FILES.keys())
 
         try:
@@ -34,6 +35,8 @@ class DataFetcher:
             self.__logger.error(err)
             raise RuntimeError(err)
 
+        return [os.path.join(self.__cache_dir, os.path.splitext(files[0])[0])]
+
     def __do_net_fetch(self, url_file_map: dict[str, str]) -> None:
         self.__logger.info(f"Try to download all files: {list(url_file_map.keys())}")
 
@@ -44,7 +47,7 @@ class DataFetcher:
 
                 with urllib.request.urlopen(url=url, timeout=90.0) as response:
                     os.makedirs(self.__cache_dir, 0o755, True)
-                    with open(full_filename, "wb+") as file:
+                    with open(full_filename, "wb") as file:
                         file.write(response.read())
 
     def __do_integrity_check(self, filename: str, md5_filename: str) -> bool:
@@ -71,3 +74,36 @@ class DataFetcher:
             with gzip.open(os.path.join(self.__cache_dir, zip_filename)) as source:
                 with open(os.path.join(self.__cache_dir, final_filename), "wb") as dest:
                     dest.write(source.read())
+
+
+class HTMLFetcher:
+    # Constants
+    CONFERENCES = ["AAAI"]
+    DURATION = range(2020, 2025)
+
+    def __init__(self, cache_dir: str) -> None:
+        self.__cache_dir = cache_dir
+
+        self.__logger = logging.getLogger("[HTMLFetcher]")
+
+    def fetch(self) -> list[str]:
+        self.__logger.info(f"Try to fetch pages from dblp.org for {self.CONFERENCES}")
+
+        ret = []
+
+        for con in [i.lower() for i in self.CONFERENCES]:
+            for year in self.DURATION:
+                req_url = f"https://dblp.org/db/conf/{con}/{con}{year}.html"
+
+                file_path = os.path.join(self.__cache_dir, f"{con}-{year}")
+                if not os.path.exists(file_path):
+                    self.__logger.info(f"Downloading page of {con.upper()}-{year}")
+
+                    with urllib.request.urlopen(url=req_url, timeout=90.0) as response:
+                        os.makedirs(self.__cache_dir, 0o755, True)
+                        with open(file_path, "wb") as cache_file:
+                            cache_file.write(response.read())
+
+                ret.append(file_path)
+
+        return ret
