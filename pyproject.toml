@@ -1,0 +1,17 @@
+[project]
+name = "paper-analysis"
+version = "0.1.0"
+description = "A simple project to analyse DBLP data"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "beautifulsoup4>=4.13.4",
+    "cmake>=4.0.3",
+    "lxml>=6.0.0",
+    "matplotlib>=3.10.3",
+    "nanobind>=2.7.0",
+    "ninja>=1.11.1.4",
+    "numpy>=2.3.1",
+    "scikit-learn>=1.7.0",
+    "wordcloud>=1.9.4",
+]
