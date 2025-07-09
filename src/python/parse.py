@@ -4,7 +4,7 @@ import time
 import typing
 import logging
 import lxml.etree
-
+import multiprocessing.pool
 
 # tuple<conference, year, title, authors, url>
 paper_t = tuple[str, int, str, list[str], str]
@@ -144,42 +144,51 @@ class HTMLParser:
         time_start = time.perf_counter_ns()
 
         ret = []
-        for html_file in self.__files:
-            try:
-                with open(html_file, "r", encoding="utf-8") as file:
-                    doc = file.read()
-                soup = bs4.BeautifulSoup(doc, "lxml")
-
-                _, f_name = os.path.split(html_file)
-                conference, year = f_name.split("-")
-                conference = conference.upper()
-                year = int(year)
-
-                for entry in soup.find_all("cite", class_="data")[1:]:
-                    title_tag = entry.find("span", class_="title")
-                    title = (
-                        title_tag.get_text(strip=False)
-                        if title_tag
-                        else "Unknown Title"
-                    ).strip()
-
-                    authors = []
-                    for author_tag in entry.find_all("span", itemprop="author"):
-                        author_name = author_tag.get_text(strip=True)
-                        authors.append(author_name)
-
-                    url = ""
-                    if ee_tag := entry.find("a", href=True):
-                        url = ee_tag["href"]
-
-                    ret.append((conference, year, title, authors, url))
-
-            except Exception as e:
-                self.__logger.error(f"Failed to parse {html_file}: {e}")
+        with multiprocessing.pool.Pool(os.cpu_count()) as pool:
+            for i in pool.map_async(self._parser_worker, self.__files).get():
+                ret.extend(i)
 
         time_end = time.perf_counter_ns()
         self.__logger.info(
-            f"HTML Parsing complete with {(time_end-time_start)/(10**9)} seconds"
+            f"HTML Parsing complete, {len(ret)} entries total with {(time_end-time_start)/(10**9)} seconds"
         )
 
         return ret
+
+    @staticmethod
+    def _parser_worker(html_file: str) -> list[paper_t]:
+        ret = []
+
+        try:
+            with open(html_file, "r", encoding="utf-8") as file:
+                doc = file.read()
+            soup = bs4.BeautifulSoup(doc, "lxml")
+
+            _, f_name = os.path.split(html_file)
+            conference, year = f_name.split("-")
+            conference = conference.upper()
+            year = int(year)
+
+            for entry in soup.find_all("cite", class_="data")[1:]:
+                title = (
+                    title_tag.get_text(strip=False)
+                    if (title_tag := entry.find("span", class_="title"))
+                    else "Unknown"
+                ).strip()
+
+                authors = [
+                    author_tag.get_text(strip=True)
+                    for author_tag in entry.find_all("span", itemprop="author")
+                ]
+
+                url = ee_tag["href"] if (ee_tag := entry.find("a", href=True)) else ""
+
+                ret.append((conference, year, title, authors, url))
+
+        except Exception as e:
+            logging.getLogger("[HTMLParserWorker]").error(
+                f"Failed to parse {html_file}: {e}"
+            )
+
+        finally:
+            return ret
