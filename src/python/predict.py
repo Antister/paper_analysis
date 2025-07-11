@@ -32,4 +32,6 @@ class DataPredictor:
             future = model.predict([[last_year + 1]])
             ret[con] = int(future[0])
 
+        self.__logger.info("Prediction complete")
+
         return ret

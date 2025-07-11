@@ -3,6 +3,7 @@ import time
 import typing
 import logging
 import wordcloud
+import multiprocessing.pool
 from matplotlib import pyplot
 
 from src.python import parse
@@ -40,6 +41,8 @@ class DataAnalyser:
         return self.__conference_count
 
     def __do_paper_count(self) -> None:
+        self.__logger.info("Counting annual publishes of each conference")
+
         for paper in self.__data:
             if (
                 paper[1] in range(self.__config[0], self.__config[1])
@@ -47,6 +50,7 @@ class DataAnalyser:
             ):
                 self.__conference_count[paper[0]][paper[1]] += 1
 
+        # Strip out the conference with 0 publishes
         self.__conference_count = {
             conferences: {
                 year: count
@@ -92,14 +96,23 @@ class DataAnalyser:
             typing.cast(int, os.cpu_count()),
         )
         end = time.perf_counter_ns()
-        self.__logger.info(f"Parsing done, {end - start}ns passed")
+        self.__logger.info(f"Parsing done, {(end - start) / 10**9} seconds elapsed")
 
-        for year, data in result.items():
-            wc = wordcloud.WordCloud(width=1920, height=1080).generate_from_frequencies(
-                data
+        with multiprocessing.pool.Pool(os.cpu_count()) as pool:
+            pool.starmap(
+                self._wordcloud_worker,
+                [(self.__out_dir, year, data) for year, data in result.items()],
             )
 
-            WC_FILE = os.path.join(self.__out_dir, f"wordcloud-{year}.png")
-            os.makedirs(self.__out_dir, 0o755, True)
-            wc.to_file(WC_FILE)
-            self.__logger.info(f"World cloud saved as {WC_FILE}")
+    @staticmethod
+    def _wordcloud_worker(out_dir: str, year: int, word_freq: dict[str, float]) -> None:
+        WC_FILE = os.path.join(out_dir, f"wordcloud-{year}.png")
+        os.makedirs(out_dir, 0o755, True)
+
+        wordcloud.WordCloud(
+            width=1920,
+            height=1080,
+            background_color="#1f1e33",
+        ).generate_from_frequencies(word_freq).to_file(WC_FILE)
+
+        logging.getLogger("[Analyser]").info(f"World cloud saved as {WC_FILE}")

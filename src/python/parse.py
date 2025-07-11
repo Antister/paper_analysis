@@ -1,6 +1,7 @@
 import os
 import bs4
 import time
+import ctypes
 import typing
 import logging
 import lxml.etree
@@ -20,6 +21,7 @@ class XMLParser:
 
         self.__logger = logging.getLogger("[XMLParser]")
 
+    # lxml sucks, more memory, less speed
     class parser_impl:
         def __init__(self, dblp_file: str, predict_callback) -> None:
             self.__dblp_file = dblp_file
@@ -42,7 +44,7 @@ class XMLParser:
             ctx = lxml.etree.iterparse(
                 self.__dblp_file,
                 events=("start", "end"),
-                dtd_validation=True,
+                dtd_validation=False,
                 load_dtd=True,
                 no_network=True,
             )
@@ -55,6 +57,7 @@ class XMLParser:
                     if not is_inproceedings:
                         is_inproceedings = element.tag == "inproceedings"
 
+                    # lxml fails to handle mixing content here, handle it manually
                     if is_inproceedings and element.tag == "title":
                         self.__is_in_title = True
 
@@ -62,6 +65,8 @@ class XMLParser:
                     if not is_inproceedings:
                         continue
 
+                    # Handle the content of element when ending
+                    # Acquire content at start event fails in some scenarios
                     self.__tag_handler(element)
 
                     if element.tag == "inproceedings":
@@ -78,8 +83,19 @@ class XMLParser:
                         is_inproceedings = False
                         self.__init_paper_tuple()
 
+                    # Clear the memory
                     element.clear()
                     root.clear()
+
+            # F*ck python's memory management
+            try:
+                libc = ctypes.CDLL("libc.so.6")
+                libc.malloc_trim(0)
+            except:
+                logger = logging.getLogger("[ParserWorker]")
+                logger.warning("Failed to trim dynamic memory")
+                logger.warning("Which may cause high memory consumption")
+                logger.warning("It's safe to ignore the warning if don't use glibc")
 
         def __tag_handler(self, element) -> None:
             if not (element.tag and element.text):
@@ -94,6 +110,7 @@ class XMLParser:
                     case "title":
                         self.__is_in_title = False
                         self.__paper_title = (
+                            # Handle mixing content, the text in inner label is processed before title
                             f"{text} {self.__paper_title.strip()}".strip()
                         )
                     case "author":
@@ -103,7 +120,7 @@ class XMLParser:
                     case _:
                         pass
 
-            if self.__is_in_title:
+            if self.__is_in_title:  # Take everything in title label
                 self.__paper_title += element.text + (
                     element.tail if element.tail else ""
                 )
@@ -164,11 +181,14 @@ class HTMLParser:
                 doc = file.read()
             soup = bs4.BeautifulSoup(doc, "lxml")
 
-            _, f_name = os.path.split(html_file)
-            conference, year = f_name.split("-")
+            # Infer the conference and year from filename
+            _, file_name = os.path.split(html_file)
+            conference, year = file_name.split("-")
             conference = conference.upper()
             year = int(year)
 
+            # Use lxml to process html, really slow
+            # Skip the first entry since it's the header
             for entry in soup.find_all("cite", class_="data")[1:]:
                 title = (
                     title_tag.get_text(strip=False)

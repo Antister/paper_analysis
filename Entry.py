@@ -27,6 +27,7 @@ def entry() -> None:
     )
     if ret.returncode:
         logger.error(f"CMake configure process failed with {ret.returncode}")
+        sys.exit(1)
 
     # Build and install the cpp extension
     ret = subprocess.run(
@@ -40,6 +41,7 @@ def entry() -> None:
     )
     if ret.returncode:
         logger.error(f"Build process failed with {ret.returncode}")
+        sys.exit(1)
 
     # Add library path to python lookup path
     sys.path.append(main.CACHE_DIR)

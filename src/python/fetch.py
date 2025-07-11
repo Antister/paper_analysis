@@ -77,24 +77,21 @@ class XMLFetcher:
 
 
 class HTMLFetcher:
-    # Constants
-    CONFERENCES = ["AAAI"]
-    DURATION = range(2020, 2025)
-
     def __init__(self, cache_dir: str) -> None:
         self.__cache_dir = cache_dir
 
         self.__logger = logging.getLogger("[HTMLFetcher]")
 
-    def fetch(self) -> list[str]:
-        self.__logger.info(f"Try to fetch pages from dblp.org for {self.CONFERENCES}")
+    def fetch(self, start: int, end: int, conferences: list[str]) -> list[str]:
+        self.__logger.info(f"Try to fetch pages from dblp.org for {conferences}")
 
         ret = []
 
-        for con in [i.lower() for i in self.CONFERENCES]:
-            for year in self.DURATION:
+        for con in [i.lower() for i in conferences]:
+            for year in range(start, end + 1):
                 req_url = f"https://dblp.org/db/conf/{con}/{con}{year}.html"
 
+                # Construct filename for parse: {conference}-{year}
                 file_path = os.path.join(self.__cache_dir, f"{con}-{year}")
                 if not os.path.exists(file_path):
                     self.__logger.info(f"Downloading page of {con.upper()}-{year}")
