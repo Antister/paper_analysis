@@ -3,7 +3,7 @@
 #include <string_view>
 #include <unordered_set>
 
-const std::unordered_set<std::string_view> STOPWORDS = {
+inline const std::unordered_set<std::string_view> STOPWORDS = {
     "-",
     "the",
     "a",
@@ -195,7 +195,7 @@ const std::unordered_set<std::string_view> STOPWORDS = {
 
 constexpr auto TERMINOLOGY_MIN_WORDS = 2uz;
 constexpr auto TERMINOLOGY_MAX_WORDS = 3uz;
-const std::unordered_set<std::string_view> TERMINOLOGY = {
+inline const std::unordered_set<std::string_view> TERMINOLOGY = {
     "machine learning",
     "deep learning",
     "reinforcement learning",
