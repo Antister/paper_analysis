@@ -17,10 +17,8 @@ This project is a simple tool for analyzing academic data from [DBLP](dblp.org).
 
 ### Prerequisites
 
-  * Python \>= 3.13
+  * [uv](https://github.com/astral-sh/uv)
   * A C++23 compatible compiler
-  * CMake
-  * Ninja
 
 The Python packages required for this project are listed in the `pyproject.toml` file and include:
 
@@ -32,7 +30,7 @@ The Python packages required for this project are listed in the `pyproject.toml`
   * `scikit-learn`
   * `wordcloud`
 
-### Installation Steps
+### Running the Project
 
 1.  **Clone the project**
 
@@ -41,19 +39,13 @@ The Python packages required for this project are listed in the `pyproject.toml`
     cd paper-analysis
     ```
 
-2.  **Install dependencies**
+2.  **Run**
 
     ```bash
-    pip install .
+    uv run Entry.py
     ```
 
-### Running the Project
-
-Run `Entry.py` to start the project. On the first run, the project will automatically download the necessary data files from the DBLP database and compile the C++ extension modules.
-
-```bash
-python Entry.py
-```
+Run `Entry.py` with uv to start the project. On the first run, the project will automatically resolve dependecies,  download the necessary data files from the DBLP database and compile the C++ extension modules.
 
 The program will perform the following actions:
 

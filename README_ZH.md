@@ -17,10 +17,8 @@
 
 ### 环境要求
 
-  * Python \>= 3.13
+  * [uv](https://github.com/astral-sh/uv)
   * 支持 C++23 的编译器
-  * CMake
-  * Ninja
 
 本项目依赖的 Python 包已在 `pyproject.toml` 文件中列出，主要包括：
 
@@ -32,7 +30,7 @@
   * `scikit-learn`
   * `wordcloud`
 
-### 安装步骤
+### 运行项目
 
 1.  **克隆项目**
 
@@ -41,19 +39,13 @@
     cd paper-analysis
     ```
 
-2.  **安装依赖**
+2.  **直接运行**
 
     ```bash
-    pip install .
+    uv run Entry.py
     ```
 
-### 运行项目
-
-直接运行 `Entry.py` 即可启动项目。首次运行时，项目会自动从 DBLP 数据库下载所需的数据文件，并编译 C++ 扩展模块。
-
-```bash
-python Entry.py
-```
+使用uv直接运行 `Entry.py` 即可启动项目。首次运行时，项目会自动安装依赖以及从 DBLP 数据库下载所需的数据文件，并编译 C++ 扩展模块。
 
 程序会执行以下操作：
 
