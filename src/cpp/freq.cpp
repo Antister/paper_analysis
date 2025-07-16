@@ -80,6 +80,7 @@ result_t compute_word_freq(const std::vector<paper_t> &papers, const std::vector
                         tokens.emplace_back(std::move(token_str));
                         i += count;
                         is_match_success = true;
+                        break;
                     }
                 }
 
